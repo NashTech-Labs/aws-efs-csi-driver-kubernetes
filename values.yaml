@@ -1,0 +1,90 @@
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+image:
+  repository: 602401143452.dkr.ecr.us-east-1.amazonaws.com/eks/aws-efs-csi-driver
+  tag: "v1.3.8"
+  pullPolicy: IfNotPresent
+
+sidecars:
+  livenessProbe:
+    image:
+      repository: public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe
+      tag: v2.2.0-eks-1-18-2
+      pullPolicy: IfNotPresent
+    resources: {}
+  nodeDriverRegistrar:
+    image:
+      repository: public.ecr.aws/eks-distro/kubernetes-csi/node-driver-registrar
+      tag: v2.1.0-eks-1-18-2
+      pullPolicy: IfNotPresent
+    resources: {}
+  csiProvisioner:
+    image:
+      repository: public.ecr.aws/eks-distro/kubernetes-csi/external-provisioner
+      tag: v2.1.1-eks-1-18-2
+      pullPolicy: IfNotPresent
+    resources: {}
+
+imagePullSecrets: []
+
+## Controller deployment variables
+
+controller:
+  create: true
+  logLevel: 2
+  extraCreateMetadata: true
+  tags:
+    {}
+  deleteAccessPointRootDir: false
+  podAnnotations: {}
+  resources:
+    {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  serviceAccount:
+    create: true
+    name: efs-csi-controller-sa
+    annotations: 
+      eks.amazonaws.com/role-arn: arn:aws:iam::xxxxxxxx:role/AmazonEKS_EFS_CSI_DriverRole
+
+  healthPort: 9909
+
+## Node daemonset variables
+
+node:
+  logLevel: 2
+  hostAliases:
+    {}
+  dnsPolicy: ClusterFirst
+  dnsConfig:
+    {}
+  podAnnotations: {}
+  resources:
+    {}
+  nodeSelector: {}
+  tolerations:
+    - operator: Exists
+  # Specifies whether a service account should be created
+  serviceAccount:
+    create: true
+    name: efs-csi-node-sa
+    #annotations: 
+    ## Enable if EKS IAM for SA is used
+    #eks.amazonaws.com/role-arn: arn:aws:iam::781427261571:role/AmazonEKS_EFS_CSI_DriverRole
+
+  healthPort: 9809
+
+storageClasses: 
+ - name: efs-sc
+   parameters:
+     provisioningMode: efs-ap
+     directoryPerms: "700"
+     gidRangeStart: "1000"
+     gidRangeEnd: "2000"
+     basePath: "/dynamic_provisioning"
+     reclaimPolicy: Delete
+     volumeBindingMode: Immediate
